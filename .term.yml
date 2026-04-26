@@ -1,0 +1,11 @@
+project: term
+shortcuts:
+  dev:
+    description: Start local development
+    steps:
+      - echo "Configure your dev command in .term.yml"
+
+  test:
+    description: Run tests
+    steps:
+      - echo "Configure your test command in .term.yml"
