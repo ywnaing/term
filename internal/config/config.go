@@ -13,7 +13,16 @@ const FileName = ".term.yml"
 
 type TermConfig struct {
 	Project   string              `yaml:"project"`
+	History   HistoryConfig       `yaml:"history,omitempty"`
 	Shortcuts map[string]Shortcut `yaml:"shortcuts"`
+}
+
+type HistoryConfig struct {
+	Enabled *bool `yaml:"enabled,omitempty"`
+}
+
+func (h HistoryConfig) IsEnabled() bool {
+	return h.Enabled == nil || *h.Enabled
 }
 
 type Shortcut struct {

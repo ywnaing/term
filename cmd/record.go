@@ -16,6 +16,7 @@ var recordFlags struct {
 	stdout     string
 	stderr     string
 	durationMS int64
+	quiet      bool
 }
 
 var recordCmd = &cobra.Command{
@@ -25,10 +26,21 @@ var recordCmd = &cobra.Command{
 		if recordFlags.command == "" {
 			return fmt.Errorf("--command is required")
 		}
+		if history.ShouldSkipCommand(recordFlags.command) {
+			return nil
+		}
 		cwd, _ := os.Getwd()
 		project := config.ProjectNameFromDir(cwd)
-		if _, cfg, err := config.FindNearest(cwd); err == nil && cfg.Project != "" {
-			project = cfg.Project
+		if _, cfg, err := config.FindNearest(cwd); err == nil {
+			if !cfg.History.IsEnabled() {
+				if !recordFlags.quiet {
+					fmt.Println("Command history is disabled for this project.")
+				}
+				return nil
+			}
+			if cfg.Project != "" {
+				project = cfg.Project
+			}
 		}
 		path, err := history.DefaultPath()
 		if err != nil {
@@ -39,12 +51,22 @@ var recordCmd = &cobra.Command{
 			return err
 		}
 		defer store.Close()
-		record := history.NewRecord(recordFlags.command, recordFlags.exitCode, recordFlags.stdout, recordFlags.stderr, recordFlags.durationMS, cwd, project)
+		record := history.NewRecord(
+			history.Redact(recordFlags.command),
+			recordFlags.exitCode,
+			history.Redact(recordFlags.stdout),
+			history.Redact(recordFlags.stderr),
+			recordFlags.durationMS,
+			cwd,
+			project,
+		)
 		id, err := store.Insert(record)
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Recorded command history: %d\n", id)
+		if !recordFlags.quiet {
+			fmt.Printf("Recorded command history: %d\n", id)
+		}
 		return nil
 	},
 }
@@ -55,4 +77,5 @@ func init() {
 	recordCmd.Flags().StringVar(&recordFlags.stdout, "stdout", "", "command stdout")
 	recordCmd.Flags().StringVar(&recordFlags.stderr, "stderr", "", "command stderr")
 	recordCmd.Flags().Int64Var(&recordFlags.durationMS, "duration-ms", 0, "command duration in milliseconds")
+	recordCmd.Flags().BoolVar(&recordFlags.quiet, "quiet", false, "suppress output")
 }

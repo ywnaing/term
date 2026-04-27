@@ -156,19 +156,32 @@ term history run 1
 term history clear
 ```
 
-## Shell Hook Placeholder
+## Shell Hook
 
-Print the experimental hook snippet:
+Print an experimental hook snippet:
 
 ```sh
 term hook install
+term hook install zsh
+term hook install bash
 ```
 
-The MVP does not install deep shell integration yet. Future versions will use hooks to record commands automatically.
+The hook records command text, exit code, cwd, project name, timestamp, shell, OS, and duration after each command. It does not capture stdout or stderr by default, which keeps history safer for everyday use.
+
+Commands that start with a space are skipped, and `term record` redacts common secret values such as tokens, passwords, API keys, and bearer tokens before saving history.
+
+To disable automatic recording in a project, add this to `.term.yml`:
+
+```yaml
+history:
+  enabled: false
+```
+
+`term explain last` works best when stderr was recorded manually with `term record --stderr`, while automatic hooks make `term history search` useful immediately.
 
 ## Roadmap
 
-- Safer automatic shell history capture
+- Optional stderr capture with strong redaction controls
 - Better command templates and variable prompts
 - Project-specific recipe packs
 - Richer diagnostics for build tools
