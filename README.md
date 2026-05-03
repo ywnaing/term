@@ -158,12 +158,28 @@ term history clear
 
 ## Shell Hook
 
-Print an experimental hook snippet:
+Install the experimental shell hook:
 
 ```sh
 term hook install
 term hook install zsh
 term hook install bash
+```
+
+`term hook install` edits `~/.zshrc` or `~/.bashrc` with a managed block and creates a timestamped backup first. Re-running the command updates the existing managed block instead of adding duplicates.
+
+Preview or print the hook without changing files:
+
+```sh
+term hook install zsh --dry-run
+term hook install zsh --print
+```
+
+Remove the managed hook:
+
+```sh
+term hook uninstall zsh
+term hook uninstall bash
 ```
 
 The hook records command text, exit code, cwd, project name, timestamp, shell, OS, and duration after each command. It does not capture stdout or stderr by default, which keeps history safer for everyday use.
