@@ -7,8 +7,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"term/internal/config"
-	"term/internal/detect"
+	"github.com/ywnaing/term/internal/config"
+	"github.com/ywnaing/term/internal/detect"
 )
 
 var initCmd = &cobra.Command{

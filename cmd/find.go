@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"term/internal/recipes"
+	"github.com/ywnaing/term/internal/recipes"
 )
 
 var findCmd = &cobra.Command{

@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"term/internal/config"
+	"github.com/ywnaing/term/internal/config"
 )
 
 var listCmd = &cobra.Command{

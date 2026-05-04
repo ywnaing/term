@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"term/internal/executor"
-	"term/internal/history"
+	"github.com/ywnaing/term/internal/executor"
+	"github.com/ywnaing/term/internal/history"
 )
 
 var historyCmd = &cobra.Command{

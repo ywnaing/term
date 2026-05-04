@@ -11,6 +11,14 @@ No AI integration is included in this MVP, and no external APIs are called.
 
 ## Install From Source
 
+Install a tagged release with Go:
+
+```sh
+go install github.com/ywnaing/term@v0.1.0
+```
+
+Or install from a local checkout:
+
 ```sh
 go install .
 ```

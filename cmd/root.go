@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"term/internal/output"
+	"github.com/ywnaing/term/internal/output"
 )
 
 const version = "0.1.0"

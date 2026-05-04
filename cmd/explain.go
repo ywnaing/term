@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"term/internal/explain"
-	"term/internal/history"
+	"github.com/ywnaing/term/internal/explain"
+	"github.com/ywnaing/term/internal/history"
 )
 
 var explainCmd = &cobra.Command{

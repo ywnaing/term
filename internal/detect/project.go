@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"term/internal/config"
+	"github.com/ywnaing/term/internal/config"
 )
 
 type ProjectKind string

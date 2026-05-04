@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"term/internal/config"
-	"term/internal/history"
+	"github.com/ywnaing/term/internal/config"
+	"github.com/ywnaing/term/internal/history"
 )
 
 var recordFlags struct {

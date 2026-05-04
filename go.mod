@@ -1,4 +1,4 @@
-module term
+module github.com/ywnaing/term
 
 go 1.24.0
 

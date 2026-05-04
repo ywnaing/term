@@ -1,0 +1,72 @@
+name: Build release binaries
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build archives
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          mkdir -p dist
+
+          build_archive() {
+            local goos="$1"
+            local goarch="$2"
+            local ext=""
+            local archive="term_${version}_${goos}_${goarch}.tar.gz"
+
+            if [[ "$goos" == "windows" ]]; then
+              ext=".exe"
+              archive="term_${version}_${goos}_${goarch}.zip"
+            fi
+
+            GOOS="$goos" GOARCH="$goarch" CGO_ENABLED=0 go build \
+              -trimpath \
+              -ldflags "-s -w" \
+              -o "dist/term${ext}" .
+
+            if [[ "$goos" == "windows" ]]; then
+              (cd dist && zip -q "$archive" "term${ext}")
+            else
+              (cd dist && tar -czf "$archive" "term${ext}")
+            fi
+            rm "dist/term${ext}"
+          }
+
+          build_archive darwin arm64
+          build_archive darwin amd64
+          build_archive linux arm64
+          build_archive linux amd64
+          build_archive windows amd64
+
+          (cd dist && shasum -a 256 term_* > checksums.txt)
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "term $GITHUB_REF_NAME" \
+            --notes "Initial MVP release with project shortcuts, command recipes, error explanations, SQLite command history, shell hooks, and safer cancellation for child processes."

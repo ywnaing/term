@@ -1,6 +1,6 @@
 package main
 
-import "term/cmd"
+import "github.com/ywnaing/term/cmd"
 
 func main() {
 	cmd.Execute()

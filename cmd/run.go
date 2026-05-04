@@ -11,9 +11,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"term/internal/config"
-	"term/internal/executor"
-	tmpl "term/internal/template"
+	"github.com/ywnaing/term/internal/config"
+	"github.com/ywnaing/term/internal/executor"
+	tmpl "github.com/ywnaing/term/internal/template"
 )
 
 var runCmd = &cobra.Command{
