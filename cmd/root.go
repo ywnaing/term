@@ -28,5 +28,5 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.AddCommand(initCmd, listCmd, runCmd, findCmd, explainCmd, recordCmd, historyCmd, hookCmd)
+	rootCmd.AddCommand(initCmd, listCmd, runCmd, findCmd, explainCmd, recordCmd, historyCmd, hookCmd, doctorCmd)
 }

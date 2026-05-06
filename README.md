@@ -35,6 +35,7 @@ go build -o term .
 term init
 term list
 term run dev
+term doctor
 ```
 
 `term init` creates a `.term.yml` in the current directory. It detects common project types such as Node.js, Maven Spring Boot, Docker Compose, frontend folders, .NET, and Go.
@@ -190,6 +191,13 @@ term hook uninstall zsh
 term hook uninstall bash
 ```
 
+Check hook installation:
+
+```sh
+term hook status
+term hook status zsh
+```
+
 The hook records command text, exit code, cwd, project name, timestamp, shell, OS, and duration after each command. It does not capture stdout or stderr by default, which keeps history safer for everyday use.
 
 Commands that start with a space are skipped, and `term record` redacts common secret values such as tokens, passwords, API keys, and bearer tokens before saving history.
@@ -205,6 +213,7 @@ history:
 
 ## Roadmap
 
+- Better `term doctor` suggestions for project-specific tools
 - Optional stderr capture with strong redaction controls
 - Better command templates and variable prompts
 - Project-specific recipe packs

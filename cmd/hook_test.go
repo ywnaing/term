@@ -54,6 +54,20 @@ func TestRemoveManagedBlockOnlyRemovesHook(t *testing.T) {
 	}
 }
 
+func TestHookStatus(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, ".zshrc")
+	if installed, err := hookStatus(path); err != nil || installed {
+		t.Fatalf("missing rc file should be not installed without error, got installed=%v err=%v", installed, err)
+	}
+	if err := os.WriteFile(path, []byte(managedHookBlock("echo term")), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if installed, err := hookStatus(path); err != nil || !installed {
+		t.Fatalf("expected hook installed, got installed=%v err=%v", installed, err)
+	}
+}
+
 func TestUnsupportedShellError(t *testing.T) {
 	err := unsupportedShellError("fish")
 	if err == nil || !strings.Contains(err.Error(), "unsupported shell: fish") {

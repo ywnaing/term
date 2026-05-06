@@ -90,6 +90,36 @@ var hookUninstallCmd = &cobra.Command{
 	},
 }
 
+var hookStatusCmd = &cobra.Command{
+	Use:   "status [zsh|bash]",
+	Short: "Show shell hook status",
+	Args:  cobra.MaximumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		shell := hookShell(args)
+		if _, err := hookSnippet(shell); err != nil {
+			return err
+		}
+		path, display, err := hookRCPath(shell)
+		if err != nil {
+			return err
+		}
+		status, err := hookStatus(path)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Shell: %s\n", shell)
+		fmt.Printf("Config: %s\n", display)
+		if status {
+			fmt.Println("Status: installed")
+		} else {
+			fmt.Println("Status: not installed")
+			fmt.Println("Run:")
+			fmt.Printf("  term hook install %s\n", shell)
+		}
+		return nil
+	},
+}
+
 const zshHookSnippet = `# term shell hook (experimental)
 # Records command text, exit code, cwd, project, timestamp, shell, OS, and duration.
 # It does not capture stdout or stderr.
@@ -171,7 +201,7 @@ PROMPT_COMMAND="__term_prompt_command${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 func init() {
 	hookInstallCmd.Flags().BoolVar(&hookInstallFlags.print, "print", false, "print hook snippet without installing")
 	hookInstallCmd.Flags().BoolVar(&hookInstallFlags.dryRun, "dry-run", false, "preview hook installation without changing files")
-	hookCmd.AddCommand(hookInstallCmd, hookUninstallCmd)
+	hookCmd.AddCommand(hookInstallCmd, hookUninstallCmd, hookStatusCmd)
 }
 
 func hookShell(args []string) string {
@@ -268,6 +298,23 @@ func readOptionalFile(path string) (string, error) {
 	return string(data), err
 }
 
+func hookStatus(path string) (bool, error) {
+	content, err := readOptionalFile(path)
+	if err != nil {
+		return false, err
+	}
+	return hasManagedBlock(content), nil
+}
+
+func hasManagedBlock(content string) bool {
+	start := strings.Index(content, hookStartMarker)
+	if start == -1 {
+		return false
+	}
+	end := strings.Index(content[start:], hookEndMarker)
+	return end != -1
+}
+
 func backupFile(path, display, content string, now time.Time) (string, string, error) {
 	timestamp := now.Format("20060102T150405.000000000")
 	backup := fmt.Sprintf("%s.term.bak.%s", path, timestamp)
@@ -298,14 +345,11 @@ func upsertManagedBlock(content, block string) string {
 }
 
 func removeManagedBlock(content string) (string, bool) {
+	if !hasManagedBlock(content) {
+		return content, false
+	}
 	start := strings.Index(content, hookStartMarker)
-	if start == -1 {
-		return content, false
-	}
 	end := strings.Index(content[start:], hookEndMarker)
-	if end == -1 {
-		return content, false
-	}
 	end = start + end + len(hookEndMarker)
 	if end < len(content) && content[end] == '\n' {
 		end++
