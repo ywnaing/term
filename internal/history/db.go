@@ -128,6 +128,18 @@ func (s *Store) Clear() error {
 	return err
 }
 
+func (s *Store) Delete(id int64) (bool, error) {
+	res, err := s.db.Exec(`DELETE FROM command_history WHERE id = ?`, id)
+	if err != nil {
+		return false, err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return rows > 0, nil
+}
+
 func scanRows(rows *sql.Rows) ([]Record, error) {
 	var records []Record
 	for rows.Next() {

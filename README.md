@@ -162,6 +162,7 @@ Search, show, rerun, or clear history:
 term history search postgres
 term history show 1
 term history run 1
+term history delete 1
 term history clear
 ```
 

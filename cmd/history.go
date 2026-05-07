@@ -109,8 +109,49 @@ var historyClearCmd = &cobra.Command{
 	},
 }
 
+var historyDeleteCmd = &cobra.Command{
+	Use:   "delete <id>",
+	Short: "Delete a command history record",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		id, err := parseHistoryID(args[0])
+		if err != nil {
+			return err
+		}
+		record, err := getHistoryRecord(args[0])
+		if err != nil {
+			return err
+		}
+		if record == nil {
+			fmt.Println("No command history found.")
+			return nil
+		}
+		fmt.Println("Delete this history record?")
+		fmt.Printf("  [%d] %s\n\n", record.ID, record.Command)
+		if !confirm("Continue? y/N ") {
+			fmt.Println("Cancelled.")
+			return nil
+		}
+		store, err := openHistory()
+		if err != nil {
+			return err
+		}
+		defer store.Close()
+		deleted, err := store.Delete(id)
+		if err != nil {
+			return err
+		}
+		if !deleted {
+			fmt.Println("No command history found.")
+			return nil
+		}
+		fmt.Printf("Deleted history record: %d\n", id)
+		return nil
+	},
+}
+
 func init() {
-	historyCmd.AddCommand(historySearchCmd, historyShowCmd, historyRunCmd, historyClearCmd)
+	historyCmd.AddCommand(historySearchCmd, historyShowCmd, historyRunCmd, historyDeleteCmd, historyClearCmd)
 }
 
 func openHistory() (*history.Store, error) {
@@ -122,9 +163,9 @@ func openHistory() (*history.Store, error) {
 }
 
 func getHistoryRecord(idText string) (*history.Record, error) {
-	id, err := strconv.ParseInt(idText, 10, 64)
+	id, err := parseHistoryID(idText)
 	if err != nil {
-		return nil, fmt.Errorf("invalid history id")
+		return nil, err
 	}
 	store, err := openHistory()
 	if err != nil {
@@ -132,4 +173,12 @@ func getHistoryRecord(idText string) (*history.Record, error) {
 	}
 	defer store.Close()
 	return store.Get(id)
+}
+
+func parseHistoryID(idText string) (int64, error) {
+	id, err := strconv.ParseInt(idText, 10, 64)
+	if err != nil || id <= 0 {
+		return 0, fmt.Errorf("invalid history id")
+	}
+	return id, nil
 }

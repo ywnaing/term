@@ -80,6 +80,14 @@ func DefaultConfig(dir string) config.TermConfig {
 			"build": {Description: "Build jar", Steps: steps("./mvnw clean package")},
 		}}
 	}
+	if contains(kinds, Go) {
+		return config.TermConfig{Project: project, Shortcuts: map[string]config.Shortcut{
+			"test":    {Description: "Run tests", Steps: steps("go test ./...")},
+			"build":   {Description: "Build binary", Steps: steps("go build -o " + project + " .")},
+			"install": {Description: "Install binary", Steps: steps("go install .")},
+			"tidy":    {Description: "Tidy dependencies", Steps: steps("go mod tidy")},
+		}}
+	}
 	return config.TermConfig{Project: project, Shortcuts: map[string]config.Shortcut{
 		"dev":  {Description: "Start local development", Steps: steps(`echo "Configure your dev command in .term.yml"`)},
 		"test": {Description: "Run tests", Steps: steps(`echo "Configure your test command in .term.yml"`)},

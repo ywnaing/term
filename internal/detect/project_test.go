@@ -32,6 +32,21 @@ func TestDefaultSpringFullstackConfig(t *testing.T) {
 	}
 }
 
+func TestDefaultGoConfig(t *testing.T) {
+	dir := t.TempDir()
+	touch(t, dir, "go.mod")
+	cfg := DefaultConfig(dir)
+	if cfg.Shortcuts["test"].Steps[0].Command != "go test ./..." {
+		t.Fatalf("unexpected test command: %#v", cfg.Shortcuts["test"])
+	}
+	if cfg.Shortcuts["install"].Steps[0].Command != "go install ." {
+		t.Fatalf("unexpected install command: %#v", cfg.Shortcuts["install"])
+	}
+	if cfg.Shortcuts["build"].Steps[0].Command == "" {
+		t.Fatalf("expected build shortcut")
+	}
+}
+
 func touch(t *testing.T, dir string, parts ...string) {
 	t.Helper()
 	path := filepath.Join(append([]string{dir}, parts...)...)

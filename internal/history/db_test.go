@@ -34,3 +34,36 @@ func TestRecordSearchAndLatestFailed(t *testing.T) {
 		t.Fatalf("unexpected failed record: %#v", failed)
 	}
 }
+
+func TestDelete(t *testing.T) {
+	store, err := Open(filepath.Join(t.TempDir(), "term.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	id, err := store.Insert(Record{Command: "npm test", Cwd: "/tmp/project", ProjectName: "project", ExitCode: 0, StartedAt: "2026-04-26T10:30:00Z"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	deleted, err := store.Delete(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !deleted {
+		t.Fatalf("expected record to be deleted")
+	}
+	record, err := store.Get(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if record != nil {
+		t.Fatalf("expected deleted record to be missing: %#v", record)
+	}
+	deleted, err = store.Delete(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if deleted {
+		t.Fatalf("expected second delete to report false")
+	}
+}
