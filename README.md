@@ -70,9 +70,13 @@ Run shortcuts:
 
 ```sh
 term run dev
+term run dev --dry-run
 term run test
 term run add-migration CreateUsersTable
+term run add-migration CreateUsersTable --dry-run
 ```
+
+Use `--dry-run` to preview the resolved commands, args, parallel mode, and danger/confirmation metadata without executing anything.
 
 Steps can be strings:
 
