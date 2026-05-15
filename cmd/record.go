@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -17,12 +18,23 @@ var recordFlags struct {
 	stderr     string
 	durationMS int64
 	quiet      bool
+	captureOK  bool
 }
+
+const maxRecordedStderrBytes = 16 * 1024
 
 var recordCmd = &cobra.Command{
 	Use:   "record",
 	Short: "Record a command in history",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if recordFlags.captureOK {
+			if stderrCaptureEnabled() {
+				fmt.Println("true")
+			} else {
+				fmt.Println("false")
+			}
+			return nil
+		}
 		if recordFlags.command == "" {
 			return fmt.Errorf("--command is required")
 		}
@@ -55,7 +67,7 @@ var recordCmd = &cobra.Command{
 			history.Redact(recordFlags.command),
 			recordFlags.exitCode,
 			history.Redact(recordFlags.stdout),
-			history.Redact(recordFlags.stderr),
+			history.Redact(limitRecordedStderr(recordFlags.stderr)),
 			recordFlags.durationMS,
 			cwd,
 			project,
@@ -78,4 +90,21 @@ func init() {
 	recordCmd.Flags().StringVar(&recordFlags.stderr, "stderr", "", "command stderr")
 	recordCmd.Flags().Int64Var(&recordFlags.durationMS, "duration-ms", 0, "command duration in milliseconds")
 	recordCmd.Flags().BoolVar(&recordFlags.quiet, "quiet", false, "suppress output")
+	recordCmd.Flags().BoolVar(&recordFlags.captureOK, "capture-stderr-enabled", false, "print whether stderr capture is enabled for this project")
+	_ = recordCmd.Flags().MarkHidden("capture-stderr-enabled")
+}
+
+func stderrCaptureEnabled() bool {
+	cwd, _ := os.Getwd()
+	_, cfg, err := config.FindNearest(cwd)
+	return err == nil && cfg.History.ShouldCaptureStderr()
+}
+
+func limitRecordedStderr(stderr string) string {
+	if len(stderr) <= maxRecordedStderrBytes {
+		return stderr
+	}
+	limited := stderr[:maxRecordedStderrBytes]
+	limited = strings.TrimRight(limited, "\r\n")
+	return limited + "\n[term: stderr truncated to 16384 bytes]"
 }

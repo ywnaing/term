@@ -18,11 +18,16 @@ type TermConfig struct {
 }
 
 type HistoryConfig struct {
-	Enabled *bool `yaml:"enabled,omitempty"`
+	Enabled       *bool `yaml:"enabled,omitempty"`
+	CaptureStderr bool  `yaml:"capture_stderr,omitempty"`
 }
 
 func (h HistoryConfig) IsEnabled() bool {
 	return h.Enabled == nil || *h.Enabled
+}
+
+func (h HistoryConfig) ShouldCaptureStderr() bool {
+	return h.IsEnabled() && h.CaptureStderr
 }
 
 type Shortcut struct {

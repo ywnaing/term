@@ -122,11 +122,11 @@ var hookStatusCmd = &cobra.Command{
 
 const zshHookSnippet = `# term shell hook (experimental)
 # Records command text, exit code, cwd, project, timestamp, shell, OS, and duration.
-# It does not capture stdout or stderr.
+# It captures stderr for failed commands only when history.capture_stderr is enabled.
 # Commands that start with a space are skipped.
 #
 # - term history search <query>
-# - term explain last when stderr is recorded manually
+# - term explain last when stderr capture is enabled
 #
 autoload -Uz add-zsh-hook
 zmodload zsh/datetime 2>/dev/null || true
@@ -134,25 +134,50 @@ zmodload zsh/datetime 2>/dev/null || true
 __term_last_command=""
 __term_started_at=0
 __term_recording=0
+__term_stderr_file=""
+__term_stderr_active=0
 
 __term_preexec() {
   [[ $__term_recording -eq 1 ]] && return
   __term_last_command="$1"
   __term_started_at=${EPOCHSECONDS:-$(date +%s)}
+  __term_stderr_file=""
+  __term_stderr_active=0
+
+  if [[ "$(term record --capture-stderr-enabled 2>/dev/null)" == "true" ]]; then
+    __term_stderr_file="$(mktemp "${TMPDIR:-/tmp}/term-stderr.XXXXXX" 2>/dev/null || true)"
+    if [[ -n "$__term_stderr_file" ]]; then
+      exec 9>&2
+      exec 2> >(tee "$__term_stderr_file" >&9)
+      __term_stderr_active=1
+    fi
+  fi
 }
 
 __term_precmd() {
   local exit_code=$?
   [[ $__term_recording -eq 1 ]] && return
   [[ -z "$__term_last_command" ]] && return
-  [[ "$__term_last_command" == " "* ]] && { __term_last_command=""; return; }
+
+  if [[ $__term_stderr_active -eq 1 ]]; then
+    exec 2>&9
+    exec 9>&-
+  fi
+  [[ "$__term_last_command" == " "* ]] && { [[ -n "$__term_stderr_file" ]] && rm -f "$__term_stderr_file"; __term_last_command=""; __term_stderr_file=""; __term_stderr_active=0; return; }
 
   local now=${EPOCHSECONDS:-$(date +%s)}
   local duration_ms=$(( (now - __term_started_at) * 1000 ))
+  local stderr_arg=()
+  if [[ "$exit_code" -ne 0 && -n "$__term_stderr_file" && -s "$__term_stderr_file" ]]; then
+    stderr_arg=(--stderr "$(head -c 16384 "$__term_stderr_file")")
+  fi
   __term_recording=1
-  term record --quiet --command "$__term_last_command" --exit-code "$exit_code" --duration-ms "$duration_ms" >/dev/null 2>&1
+  term record --quiet --command "$__term_last_command" --exit-code "$exit_code" --duration-ms "$duration_ms" "${stderr_arg[@]}" >/dev/null 2>&1
   __term_recording=0
+  [[ -n "$__term_stderr_file" ]] && rm -f "$__term_stderr_file"
   __term_last_command=""
+  __term_stderr_file=""
+  __term_stderr_active=0
 }
 
 add-zsh-hook preexec __term_preexec
@@ -161,15 +186,17 @@ add-zsh-hook precmd __term_precmd
 
 const bashHookSnippet = `# term shell hook (experimental)
 # Records command text, exit code, cwd, project, timestamp, shell, OS, and duration.
-# It does not capture stdout or stderr.
+# It captures stderr for failed commands only when history.capture_stderr is enabled.
 # Commands that start with a space are skipped.
 #
 # - term history search <query>
-# - term explain last when stderr is recorded manually
+# - term explain last when stderr capture is enabled
 #
 __term_last_command=""
 __term_started_at=0
 __term_recording=0
+__term_stderr_file=""
+__term_stderr_active=0
 
 __term_debug_trap() {
   [[ $__term_recording -eq 1 ]] && return
@@ -178,20 +205,43 @@ __term_debug_trap() {
   esac
   __term_last_command="$BASH_COMMAND"
   __term_started_at=$(date +%s)
+  __term_stderr_file=""
+  __term_stderr_active=0
+
+  if [[ "$(term record --capture-stderr-enabled 2>/dev/null)" == "true" ]]; then
+    __term_stderr_file="$(mktemp "${TMPDIR:-/tmp}/term-stderr.XXXXXX" 2>/dev/null || true)"
+    if [[ -n "$__term_stderr_file" ]]; then
+      exec 9>&2
+      exec 2> >(tee "$__term_stderr_file" >&9)
+      __term_stderr_active=1
+    fi
+  fi
 }
 
 __term_prompt_command() {
   local exit_code=$?
   [[ $__term_recording -eq 1 ]] && return
   [[ -z "$__term_last_command" ]] && return
-  [[ "$__term_last_command" == " "* ]] && { __term_last_command=""; return; }
+
+  if [[ $__term_stderr_active -eq 1 ]]; then
+    exec 2>&9
+    exec 9>&-
+  fi
+  [[ "$__term_last_command" == " "* ]] && { [[ -n "$__term_stderr_file" ]] && rm -f "$__term_stderr_file"; __term_last_command=""; __term_stderr_file=""; __term_stderr_active=0; return; }
 
   local now=$(date +%s)
   local duration_ms=$(( (now - __term_started_at) * 1000 ))
+  local stderr_arg=()
+  if [[ "$exit_code" -ne 0 && -n "$__term_stderr_file" && -s "$__term_stderr_file" ]]; then
+    stderr_arg=(--stderr "$(head -c 16384 "$__term_stderr_file")")
+  fi
   __term_recording=1
-  term record --quiet --command "$__term_last_command" --exit-code "$exit_code" --duration-ms "$duration_ms" >/dev/null 2>&1
+  term record --quiet --command "$__term_last_command" --exit-code "$exit_code" --duration-ms "$duration_ms" "${stderr_arg[@]}" >/dev/null 2>&1
   __term_recording=0
+  [[ -n "$__term_stderr_file" ]] && rm -f "$__term_stderr_file"
   __term_last_command=""
+  __term_stderr_file=""
+  __term_stderr_active=0
 }
 
 trap '__term_debug_trap' DEBUG

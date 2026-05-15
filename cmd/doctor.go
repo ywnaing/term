@@ -115,6 +115,11 @@ func checkProjectConfig() []doctorResult {
 		return results
 	}
 	results = append(results, doctorResult{Status: "OK", Name: "shortcuts", Detail: fmt.Sprintf("%d configured", len(cfg.Shortcuts))})
+	if cfg.History.ShouldCaptureStderr() {
+		results = append(results, doctorResult{Status: "OK", Name: "stderr capture", Detail: "enabled for failed commands"})
+	} else {
+		results = append(results, doctorResult{Status: "OK", Name: "stderr capture", Detail: "disabled; set history.capture_stderr: true to enable"})
+	}
 	for _, warning := range shortcutWarnings(cfg) {
 		results = append(results, doctorResult{Status: "WARN", Name: "shortcut", Detail: warning})
 	}

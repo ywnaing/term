@@ -75,6 +75,26 @@ func TestUnsupportedShellError(t *testing.T) {
 	}
 }
 
+func TestHookSnippetsGateStderrCapture(t *testing.T) {
+	for name, snippet := range map[string]string{
+		"zsh":  zshHookSnippet,
+		"bash": bashHookSnippet,
+	} {
+		for _, want := range []string{
+			"term record --capture-stderr-enabled",
+			"mktemp",
+			"tee \"$__term_stderr_file\"",
+			"--stderr",
+			"head -c 16384",
+			"rm -f \"$__term_stderr_file\"",
+		} {
+			if !strings.Contains(snippet, want) {
+				t.Fatalf("%s hook missing %q", name, want)
+			}
+		}
+	}
+}
+
 func TestInstallAndUninstallHookCreateBackups(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, ".zshrc")

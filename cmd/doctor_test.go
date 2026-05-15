@@ -46,6 +46,30 @@ func TestShortcutWarnings(t *testing.T) {
 	}
 }
 
+func TestDoctorReportsStderrCaptureStatus(t *testing.T) {
+	dir := t.TempDir()
+	t.Chdir(dir)
+	enabled := true
+	err := config.Write(dir, config.TermConfig{
+		Project: "demo",
+		History: config.HistoryConfig{Enabled: &enabled, CaptureStderr: true},
+		Shortcuts: map[string]config.Shortcut{
+			"test": {Description: "Run tests", Steps: []config.Step{{Command: "cd ."}}},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var details []string
+	for _, result := range checkProjectConfig() {
+		details = append(details, result.Name+" - "+result.Detail)
+	}
+	results := strings.Join(details, "\n")
+	if !strings.Contains(results, "stderr capture - enabled") {
+		t.Fatalf("expected enabled stderr capture status, got %q", results)
+	}
+}
+
 func TestDoctorHasFailures(t *testing.T) {
 	if !doctorHasFailures([]doctorResult{{Status: "FAIL"}}) {
 		t.Fatalf("expected FAIL to count as failure")

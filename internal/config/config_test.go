@@ -16,6 +16,8 @@ shortcuts:
       - npm run dev
       - name: frontend
         command: cd frontend && npm run dev
+history:
+  capture_stderr: true
 `)
 	if err := os.WriteFile(filepath.Join(dir, FileName), content, 0644); err != nil {
 		t.Fatal(err)
@@ -30,6 +32,9 @@ shortcuts:
 	}
 	if steps[1].Name != "frontend" || steps[1].Command != "cd frontend && npm run dev" {
 		t.Fatalf("object step not parsed: %#v", steps[1])
+	}
+	if !cfg.History.ShouldCaptureStderr() {
+		t.Fatalf("expected stderr capture to be enabled")
 	}
 }
 

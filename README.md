@@ -207,6 +207,15 @@ The hook records command text, exit code, cwd, project name, timestamp, shell, O
 
 Commands that start with a space are skipped, and `term record` redacts common secret values such as tokens, passwords, API keys, and bearer tokens before saving history.
 
+To opt in to stderr capture for failed commands, add this to `.term.yml`:
+
+```yaml
+history:
+  capture_stderr: true
+```
+
+When enabled, the shell hook captures stderr only for commands with non-zero exit codes. Captured stderr is redacted and capped at 16 KB before it is stored, which makes `term explain last` useful without saving full command output.
+
 To disable automatic recording in a project, add this to `.term.yml`:
 
 ```yaml
@@ -214,12 +223,11 @@ history:
   enabled: false
 ```
 
-`term explain last` works best when stderr was recorded manually with `term record --stderr`, while automatic hooks make `term history search` useful immediately.
+`term explain last` works best when stderr was recorded manually with `term record --stderr` or captured by an opted-in hook, while automatic hooks make `term history search` useful immediately.
 
 ## Roadmap
 
 - Better `term doctor` suggestions for project-specific tools
-- Optional stderr capture with strong redaction controls
 - Better command templates and variable prompts
 - Project-specific recipe packs
 - Richer diagnostics for build tools
